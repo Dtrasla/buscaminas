@@ -1,5 +1,6 @@
 import math
 import random
+import heapq
 
 ROWS = 10
 COLUMNS = 10
@@ -10,6 +11,8 @@ MINES = set()
 EXTENDED = set()
 
 MATRIX = [['?'] * COLUMNS for i in range(ROWS)]
+
+FLAGGED = set()
 
 
 class Colors(object):
@@ -149,15 +152,131 @@ def random_player():
     #TODO: 1. Combinaciones de opciones seleccionadas y no seleccionadas (fuerza bruta)
     #TODO: 2. Heurística: Revisar combinaciones promisorias
 
+
+
+#object that has the position and sum of surrounding mines
+    
+
+def brute_force(first = True, square = None):
+    options = []
+    for i in range(ROWS):
+        for j in range(COLUMNS):
+            if MATRIX[i][j] == '?':
+                options.append((i, j))
+    if first:
+        rand_square = options[random.randint(0, len(options))]
+        print(f'Brute force first move {rand_square}')
+        return rand_square
+    else:
+        for i in range(ROWS):
+            for j in range(COLUMNS):
+                if MATRIX[i][j] == '?':
+                    options.append((i, j))
+        print(f'Brute force move {rand_square}')
+        return rand_square
+    
+
+
+#Para la heuristica sera por los que tengan las menores sumas de minas alrededor
+class Cell:
+    def __init__(self, row, col):
+        self.row = row
+        self.col = col
+        self.sum_of_neighbors = self.calculate_sum_of_neighbors()
+
+    def calculate_sum_of_neighbors(self):
+        sum_of_neighbors = 0
+        for i in range(max(0, self.row-1), min(ROWS, self.row+1)):
+            for j in range(max(0, self.col-1), min(COLUMNS, self.col+1)):
+                if i != self.row and j != self.col:
+                    if MATRIX[i][j] == '?':
+                        sum_of_neighbors += 99
+                    else:
+                        sum_of_neighbors += MATRIX[i][j]
+        return sum_of_neighbors
+    
+    def returnSum(self):
+        return self.sum_of_neighbors
+    
+    def __le__(self, other):
+        return(self.sum_of_neighbors <= other.sum_of_neighbors)
+    
+    def __lt__(self, other):
+        return(self.sum_of_neighbors < other.sum_of_neighbors)
+
+
+def heuristic(first = True):
+    pq = []
+    for i in range(ROWS):
+        for j in range(COLUMNS):
+            if MATRIX[i][j] == '?':
+                Cell(i,j)
+                #pq.append(Cell(i,j))
+                heapq.heappush(pq, (Cell(i,j).returnSum(), Cell(i,j)))
+            else:
+                flag((i,j))
+    jugar = heapq.heappop(pq) #pq.pop()
+    #square = jugar.row, jugar.col
+    square = jugar[1].row, jugar[1].col
+    while square in FLAGGED:
+        jugar = heapq.heappop(pq)
+        square = jugar[1].row, jugar[1].col
+    print(f'Heuristic move {square}')
+    return square
+
+
+
+
+
+def flag(square):
+
+    i, j = square
+    cant = MATRIX[i][j]
+    #print("Revisando {}".format(square) + " con {}".format(cant) + " minas alrededor")
+    encontradas = 0
+
+    if(cant != 0):
+        for p in range(max(0, i-1), min(ROWS, i+1)):
+                for q in range(max(0, j-1), min(COLUMNS, j+1)):
+                    if p != i and q != j:
+                        if MATRIX[p][q] == '?':
+                            encontradas += 1
+        #print("Encontradas {}".format(encontradas) + " minas alrededor")
+        if encontradas == cant:
+            for p in range(max(0, i-1), min(ROWS, i+1)):
+                for q in range(max(0, j-1), min(COLUMNS, j+1)):
+                    if p != i and q != j:
+                        if MATRIX[p][q] == '?' and (p, q) not in FLAGGED:
+                            print(f'Flagging {p} {q}' + " origen {}".format(square))
+                            sq = p, q
+                            FLAGGED.add(sq)
+                            return True
+
+
 if __name__ == '__main__':
     create_board()
 
     print('Enter coordinates (ie: 0 3)')
 
+    print("1. Para jugador aleatorio")
+    print("2. Para Heurística" )
+    print("3. Para Fuerza Bruta")
+    input = input('> ')
+
+    
+    first = True
+
     while True:
 
         print(draw_board())
-        square = random_player()
+
+        if input == '1' or first:
+            square = random_player()
+        elif input == '2':
+            square = heuristic(first)
+        elif input == '3':
+            square = brute_force(first)
+        first = False
         #square = parse_selection(input('> '))
         if not square or len(square) < 2:
             print('Unable to parse indicies, try again...')
