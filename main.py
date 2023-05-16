@@ -186,13 +186,20 @@ class Cell:
 
     def calculate_sum_of_neighbors(self):
         sum_of_neighbors = 0
-        for i in range(max(0, self.row-1), min(ROWS, self.row+1)):
-            for j in range(max(0, self.col-1), min(COLUMNS, self.col+1)):
-                if i != self.row and j != self.col:
+        for i in range(max(0, self.row-1), min(ROWS, self.row+2)):
+            for j in range(max(0, self.col-1), min(COLUMNS, self.col+2)):
+                if i != self.row or j != self.col:
                     if MATRIX[i][j] == '?':
                         sum_of_neighbors += 99
+                        if (i == 0 and j == 0) or (i == 9 and j == 0) or (i == 0 and j == 9) or (i == 9 and j == 9):
+                            sum_of_neighbors += 300
                     else:
+                        # print(f'Cell {self.row},{self.col} has {i},{j} neighbors')
                         sum_of_neighbors += MATRIX[i][j]
+        # print(f'Cell {self.row}, {self.col} has sum of neighbors {sum_of_neighbors}')
+        # print()
+        # print()
+        # print()
         return sum_of_neighbors
     
     def returnSum(self):
@@ -210,9 +217,9 @@ def heuristic(first = True):
     for i in range(ROWS):
         for j in range(COLUMNS):
             if MATRIX[i][j] == '?':
-                Cell(i,j)
+                cell = Cell(i,j)
                 #pq.append(Cell(i,j))
-                heapq.heappush(pq, (Cell(i,j).returnSum(), Cell(i,j)))
+                heapq.heappush(pq, (cell.returnSum(), cell))
             else:
                 flag((i,j))
     jugar = heapq.heappop(pq) #pq.pop()
@@ -236,19 +243,20 @@ def flag(square):
     encontradas = 0
 
     if(cant != 0):
-        for p in range(max(0, i-1), min(ROWS, i+1)):
-                for q in range(max(0, j-1), min(COLUMNS, j+1)):
-                    if p != i and q != j:
+        for p in range(max(0, i-1), min(ROWS, i+2)):
+                for q in range(max(0, j-1), min(COLUMNS, j+2)):
+                    if p != i or q != j:
                         if MATRIX[p][q] == '?':
                             encontradas += 1
+
         #print("Encontradas {}".format(encontradas) + " minas alrededor")
         if encontradas == cant:
-            for p in range(max(0, i-1), min(ROWS, i+1)):
-                for q in range(max(0, j-1), min(COLUMNS, j+1)):
-                    if p != i and q != j:
-                        if MATRIX[p][q] == '?' and (p, q) not in FLAGGED:
-                            print(f'Flagging {p} {q}' + " origen {}".format(square))
-                            sq = p, q
+            for r in range(max(0, i-1), min(ROWS, i+2)):
+                for c in range(max(0, j-1), min(COLUMNS, j+2)):
+                    if r != i or c != j:
+                        if MATRIX[r][c] == '?' and (r, c) not in FLAGGED:
+                            print(f'Flagging {r} {c}' + " origen {}".format(square))
+                            sq = r, c
                             FLAGGED.add(sq)
                             return True
 
