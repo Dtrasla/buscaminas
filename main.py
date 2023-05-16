@@ -99,7 +99,7 @@ def update_board(square, selected=True):
     index = get_index(i, j)
     EXTENDED.add(index)
 
-    # Check if we hit a mine, and if it was selected by the user or merely traversed
+
     if index in MINES:
         if not selected:
             return
@@ -160,12 +160,9 @@ def random_player():
     print(f'Random player plays {rand_square}')
     return rand_square
     # NO SE PUEDE REVISAR  MINES!!!
-    #TODO: 1. Combinaciones de opciones seleccionadas y no seleccionadas (fuerza bruta)
-    #TODO: 2. Heurística: Revisar combinaciones promisorias
 
 
 
-#object that has the position and sum of surrounding mines
     
 
 def brute_force(first, square = None):
@@ -223,7 +220,7 @@ class Cell:
                             sum_of_neighbors += 200
                     else:
                         # print(f'Cell {self.row},{self.col} has {i},{j} neighbors')
-                        sum_of_neighbors += MATRIX[i][j]
+                        sum_of_neighbors += MATRIX[i][j]*10
         # print(f'Cell {self.row}, {self.col} has sum of neighbors {sum_of_neighbors}')
         # print()
         # print()
@@ -336,4 +333,3 @@ if __name__ == '__main__':
             break
 
 
-#Tests the board 100 times
