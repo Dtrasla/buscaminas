@@ -20,6 +20,7 @@ class Colors(object):
     GREEN = '\033[92m'
     YELLOW = '\033[93m'
     RED = '\033[91m'
+    PURPLE = '\033[95m'
     ENDC = '\033[0m'
 
 
@@ -133,6 +134,9 @@ def reveal_mines():
         if index in EXTENDED:
             continue
         BOARD[index] = colorize(' X ', Colors.YELLOW)
+        i, j = divmod(index, ROWS)
+        if (i,j) in FLAGGED:
+            BOARD[index] = colorize(' X ', Colors.PURPLE)
 
 
 def has_won():
@@ -146,6 +150,13 @@ def random_player():
             if MATRIX[i][j] == '?':
                 options.append((i, j))
     rand_square = options[random.randint(0, len(options))]
+
+    p, q = rand_square
+
+    if (p >= ROWS or q >= COLUMNS) or (p < 0 or q < 0):
+        return random_player()
+
+    #print(f'Random player plays {rand_square}')
     print(f'Random player plays {rand_square}')
     return rand_square
     # NO SE PUEDE REVISAR  MINES!!!
@@ -157,23 +168,38 @@ def random_player():
 #object that has the position and sum of surrounding mines
     
 
-def brute_force(first = True, square = None):
+def brute_force(first, square = None):
     options = []
-    for i in range(ROWS):
-        for j in range(COLUMNS):
-            if MATRIX[i][j] == '?':
-                options.append((i, j))
     if first:
+        for i in range(ROWS):
+            for j in range(COLUMNS):
+                if MATRIX[i][j] != '?':
+                    options.append((i, j))
         rand_square = options[random.randint(0, len(options))]
         print(f'Brute force first move {rand_square}')
         return rand_square
-    else:
+
+
+
+    else: #solo agrega a las opciones las casillas que estan al lado de las casillas que ya se han seleccionado
         for i in range(ROWS):
             for j in range(COLUMNS):
-                if MATRIX[i][j] == '?':
-                    options.append((i, j))
-        print(f'Brute force move {rand_square}')
-        return rand_square
+                if MATRIX[i][j] != '?':
+                    flag((i, j))
+                    for p in range(max(0, i - 1), min(ROWS, i + 2)):
+                        for q in range(max(0, j - 1), min(COLUMNS, j + 2)):
+                            if p != i or q != j:
+                                if MATRIX[p][q] == '?':
+                                    options.append((p, q))
+    if(options == []):
+        return random_player()
+
+    rand_square = options[random.randint(0, len(options))]
+    while rand_square in FLAGGED:
+        rand_square = options[random.randint(0, len(options))]
+                    #options.append((i, j))
+    print(f'Brute force move {rand_square}')
+    return rand_square
     
 
 
@@ -190,9 +216,11 @@ class Cell:
             for j in range(max(0, self.col-1), min(COLUMNS, self.col+2)):
                 if i != self.row or j != self.col:
                     if MATRIX[i][j] == '?':
-                        sum_of_neighbors += 99
-                        if (i == 0 and j == 0) or (i == 9 and j == 0) or (i == 0 and j == 9) or (i == 9 and j == 9):
-                            sum_of_neighbors += 300
+                        sum_of_neighbors += 99 #Las siguientes sumas disminuyen el sesgo a escoger bordes
+                        if (i == 0 and j == 0) or (i == 9 and j == 0) or (i == 0 and j == 9) or (i == 9 and j == 9): #Esquinas
+                            sum_of_neighbors += 400
+                        elif (i == 0 or i == 9) or (j == 0 or j == 9): #bordes normales
+                            sum_of_neighbors += 200
                     else:
                         # print(f'Cell {self.row},{self.col} has {i},{j} neighbors')
                         sum_of_neighbors += MATRIX[i][j]
@@ -228,7 +256,7 @@ def heuristic(first = True):
     while square in FLAGGED:
         jugar = heapq.heappop(pq)
         square = jugar[1].row, jugar[1].col
-    print(f'Heuristic move {square}')
+    #print(f'Heuristic move {square}')
     return square
 
 
@@ -255,14 +283,16 @@ def flag(square):
                 for c in range(max(0, j-1), min(COLUMNS, j+2)):
                     if r != i or c != j:
                         if MATRIX[r][c] == '?' and (r, c) not in FLAGGED:
-                            print(f'Flagging {r} {c}' + " origen {}".format(square))
+                           # print(f'Flagging {r} {c}' + " origen {}".format(square))
                             sq = r, c
                             FLAGGED.add(sq)
                             return True
 
 
+
 if __name__ == '__main__':
     create_board()
+    #test()
 
     print('Enter coordinates (ie: 0 3)')
 
@@ -296,7 +326,14 @@ if __name__ == '__main__':
                 reveal_mines()
                 print(draw_board())
                 print('Game over')
+                with open('results.txt', 'a') as f:
+                    f.write('Loss\n')
             else:
                 print(draw_board())
                 print('You won!')
+                with open('results.txt', 'a') as f:
+                    f.write('Win\n')
             break
+
+
+#Tests the board 100 times
